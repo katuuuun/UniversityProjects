@@ -1,0 +1,70 @@
+        include emu8086.inc 
+        .model  tiny          
+        .code                 
+        .org 100h             
+
+start:	 
+        mov ah, 9h            
+        lea dx, msg1          
+        int 21h               
+ 
+        call scan_num         ; ввод числа C
+        mov C, cx 
+
+        printn ''
+              
+        lea dx, msg2          
+        int 21h               
+                
+        call scan_num         ; ввод числа D
+        mov D, cx 
+
+        printn ''
+        
+        lea dx, msg3          
+        int 21h               
+
+        ;передача через стек
+        push [D]              ; занесение параметра D в стек
+        push [C]              ; занесение параметра C в стек        
+        call calc_proc        ; вызов процедуры
+        add	sp,4		      ; освобождение стека от двух аргументов
+                
+        call PRINT_NUM        ; вывод результата в консоль   
+
+        ret                   ; возврат управления ОС  
+        
+calc_proc proc
+        push bp               ; сохранение старого значения BP
+        mov bp, sp            ; установка указателя базы BP
+        
+        mov	dx, [bp+6]	      ; пересылка переменной D в DX 
+        mov	ax, [bp+6]	      ; пересылка переменной D в AX
+        mov	bx, [bp+4]	      ; пересылка переменной C в BX
+      
+        imul dx 
+        mov dx, [bp+6]
+        imul dx
+        mov cx, ax     ; in cx d^3
+        mov ax, [bp+6]
+        mov dl, 3
+        div dl         ; d/3 in ax
+        add ax, bx     
+        imul ax 
+        add ax, cx
+        pop	bp		          ; восстановление старого значения BP 
+        ret                   ; выход из процедуры
+calc_proc endp
+
+        .data
+msg1    db "Введите число C:", 0Dh, 0Ah, "$" 
+msg2    db "Введите число D:", 0Dh, 0Ah, "$"  
+msg3    db "Ответ: ", "$"
+C       dw 0
+D       dw 0
+
+DEFINE_SCAN_NUM
+DEFINE_PRINT_NUM   
+DEFINE_PRINT_NUM_UNS
+        
+        end start	 
